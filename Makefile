@@ -39,7 +39,7 @@ TESTS = \
 
 TESTS := $(addprefix tests/,$(TESTS))
 # dependency of source files
-deps := $(TESTS:%:%.o.d)
+deps := $(TESTS:=.o.d)
 
 TESTS_OK = $(TESTS:=.ok)
 
@@ -62,6 +62,29 @@ $(TESTS): %: %.o
 
 clean:
 	$(VECHO) "  Cleaning...\n"
-	$(Q)$(RM) $(TESTS) $(TESTS_OK) $(TESTS:=.o) $(TESTS:=.o.d)
+	$(Q)$(RM) $(TESTS) $(TESTS_OK) $(TESTS:=.o) $(TESTS:=.o.d) \
+		$(EXAMPLES) $(EXAMPLES_OK) $(EXAMPLES:=.o) $(EXAMPLES:=.o.d)
+
+# add to build ./example rule
+EXAMPLES = \
+	quick-sort \
+	insert-sort \
+	merge-sort
+
+EXAMPLES := $(addprefix examples/,$(EXAMPLES))
+EXAMPLES_OK := $(EXAMPLES:=.ok)
+deps += $(EXAMPLES:=.o.d)
+CFLAGS += -I./private
+
+examples: $(EXAMPLES_OK)
+
+$(EXAMPLES): %:%.o
+	$(VECHO) "  LD\t$@\n"
+	$(Q)$(CC) -o $@ $^ $(LDFLAGS)
+
+$(EXAMPLES_OK): %.ok:%
+	$(Q)$(PRINTF) "*** Validating $< ***\n"
+	$(Q)./$< && $(PRINTF) "\t$(PASS_COLOR)[ Verified ]$(NO_COLOR)\n"
+	@touch $@
 
 -include $(deps)
